@@ -1,0 +1,74 @@
+QC findings: Vicmap Features of Interest (FOI), Mornington Peninsula LGA
+
+Data notes
+- EXTRACT_POLYGON (boundary) is a single polygon. The downloaded file held 10 rows with identical geometry; Delete duplicate geometries reduced them to 1, and Multipart to singleparts also gives 1.
+- FOI_POINT is a multipoint layer: 1,321 features hold 1,347 individual points.
+- All layers analysed in EPSG:7855 (GDA2020 / MGA zone 55).
+
+
+Finding 1: Parts of reserve features fall outside the LGA land boundary
+
+- Layer: FOI_POLYGON (2,646 features)
+- Check: Extract by location, disjoint vs EXTRACT_POLYGON
+- Result on original layer: 0 features
+- After Multipart to Singleparts: 22 parts outside the boundary
+- These 22 parts belong to 4 multipart features
+- All are FTYPE = reserve (national parks, conservation reserves, parks)
+- Likely explanation: the land boundary excludes marine areas, and
+  these reserves extend into water
+- Note: FOI_POINT (1,321 features): 0 features lie entirely outside the boundary,
+  but 16 points of 5 multipoint features do (see Finding 6)
+
+
+Finding 2: Polygon geometry validity
+
+- Tool: Check validity (GEOS) on FOI_POLYGON
+- Valid: 2,646 / Invalid: 0 / Error: 0
+- Result: all polygon geometries are valid
+
+
+Finding 3: Co-located point features in FOI_POINT
+
+- Layer: FOI_POINT (1,321 features)
+- Tool: Delete duplicate geometries (compares whole geometries, so this check works at feature level)
+- Result: 22 extra features share a geometry with another feature (27 features in total are involved), 1,299 unique geometries
+- Inspection: all 27 have distinct UFI, PFI and FEATURE_ID, so none are true duplicates
+- Most are broadcast TV/radio transmitters (FTYPE = communication) sharing one tower location, plus a few co-located services
+- Conclusion: these are valid co-located features, not data errors, but analyses that count points by location should account for them
+
+
+Finding 4: Missing NAME values
+
+- Check: Select by expression, "NAME" IS NULL OR trim("NAME") = ''
+- FOI_POINT: 135 of 1,321 features (10.2%) have no NAME
+- FOI_POLYGON: 1,622 of 2,646 features (61.3%) have no NAME
+- Of these, 1,338 FOI_POLYGON features (50.6% of the layer) also have no PARENTNAME; the other 284 have a PARENTNAME only
+- Breakdown by FTYPE (those 1,338): reserve 1,194 (89.2%), sport facility 70, education centre 54, storage facility 7, excavation site 7, hospital 4, power facility 1, commercial facility 1
+- Reserves with no NAME and no PARENTNAME: 1,194 of 1,919 reserves (62.2%); all have FEATSUBTYP = park
+- Area of these 1,194 parks (Add geometry attributes, layer CRS, EPSG:7855, m²): median 396 m², Q1 146 m², Q3 1,023 m², min 2 m², max 810,719 m² (about 81 ha)
+- Conclusion: missing names are concentrated in small parks (75% under about 1,000 m²), which likely have no official name, so this is mostly a completeness limitation rather than a systematic error. A small number of large unnamed parks (and polygons of only a few m²) remain worth reviewing (see Finding 5). NAME cannot be used to identify or count parks reliably; use FTYPE/FEATSUBTYP instead
+
+
+Finding 5: Size outliers among unnamed parks
+
+- Layer: FOI_POLYGON_unnamed_parks_area (1,194 unnamed parks, area in m², EPSG:7855)
+- Check: Select by expression on "area", sorted by area
+- Large: 57 of 1,194 (4.8%) are over 10,000 m²; 16 (1.3%) are over 100,000 m² (10 ha). Largest: about 81 ha, 73 ha and 42 ha
+- Tiny: 11 of 1,194 (0.9%) are under 10 m² (about 2 to 6.5 m²)
+- Inspection (tiny): one polygon (6.5 m², perimeter 65.6 m) zoomed at 1:65 is a strip about 0.2 m x 33 m, i.e. a sliver. Five others have near-identical area (~5.5 m²) and perimeter (~37 m)
+- Inspection (large): one park of about 20 ha has FTYPE = reserve, FEATSUBTYP = park, NAME and PARENTNAME both NULL. Only 3 of the 16 parks over 10 ha have CHILDEXIST = Y, so a missing NAME is not explained by the parks simply containing named child features
+- Conclusion: the tiny polygons are probably digitising or overlay artefacts and should be excluded or reviewed before area-based analysis. The 16 unnamed parks over 10 ha were not all individually verified, but they are the most worthwhile unnamed records to review first
+
+
+Finding 6: Multipoint features with points outside the boundary
+
+- Layer: FOI_POINT (1,321 features = 1,347 points)
+- Check: Multipart to Singleparts on FOI_POINT, then Extract by location (disjoint) vs EXTRACT_POLYGON
+- Result: 16 of 1,347 points lie outside the boundary
+- They belong to 5 multipoint features, all FTYPE = education centre:
+  Chisholm Institute of TAFE (5 points), Oakwood School (7), Woodleigh School (2),
+  Somers School Camp (1), Flinders Christian Community College (1)
+- Note: the earlier Extract by location on the 1,321 features returned 0, because a multipoint feature with at least one point inside the boundary is not disjoint
+- Inspection: 3 points were checked on the map. One point of Chisholm Institute of TAFE lies in the south-eastern suburbs of Melbourne, another near Wonthaggi, and the Somers School Camp point lies far to the east near Yallourn North (Latrobe Valley). The other 13 points were not individually verified
+- Likely explanation: institutions with several sites stored as one multipoint feature; the data seems to have been selected by feature, so a feature with at least one point inside the LGA is kept with all of its points
+- Conclusion: probably a boundary-definition effect, not a data error (cause not confirmed). Counts of points by location should use singleparts and be clipped to the boundary
