@@ -16,7 +16,9 @@ To practise a repeatable QC workflow on an authoritative state spatial dataset: 
 - **EXTRACT_POLYGON**, the boundary layer supplied with the data, used as the reference extent. It is a single polygon (the downloaded file contained 10 rows with identical geometry, reduced to one with Delete duplicate geometries). It is referred to below as "the boundary".
 - All layers analysed in **EPSG:7855** (GDA2020 / MGA zone 55).
 
-> Add the exact licence and attribution wording from the DataShare download here.
+> **Licence and attribution:** Vicmap Features of Interest © State of Victoria (Department of Transport and Planning), obtained from DataShare (Order 4PDR1L, 13 Oct 2026; dataset published 9 Oct 2026), licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/). The data was processed in QGIS for quality-control analysis (for example, duplicate boundary geometries were reduced to one); the original data is not redistributed in this repository. Dataset information: https://www.land.vic.gov.au/maps-and-spatial/spatial-data/vicmap-catalogue/vicmap-features-of-interest
+
+
 
 ## Tools
 
